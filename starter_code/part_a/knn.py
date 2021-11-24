@@ -1,5 +1,5 @@
 from sklearn.impute import KNNImputer
-from utils import *
+from starter_code.utils import *
 
 
 def knn_impute_by_user(matrix, valid_data, k):
