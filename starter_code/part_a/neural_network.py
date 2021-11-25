@@ -1,4 +1,6 @@
-from starter_code.utils import *
+import matplotlib.pyplot as plt
+
+from utils import *
 from torch.autograd import Variable
 
 import torch.nn as nn
@@ -70,14 +72,17 @@ class AutoEncoder(nn.Module):
         # Implement the function as described in the docstring.             #
         # Use sigmoid activations for f and g.                              #
         #####################################################################
-        out = inputs
+        f1 = self.g(inputs)
+        encode = F.sigmoid(f1)
+        f2 = self.h(encode)
+        out = F.sigmoid(f2)
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
         return out
 
 
-def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
+def train(model, lr, train_data, zero_train_data, valid_data, num_epoch, lamb=0):
     """ Train the neural network, where the objective also includes
     a regularizer.
 
@@ -99,6 +104,9 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
     optimizer = optim.SGD(model.parameters(), lr=lr)
     num_student = train_data.shape[0]
 
+    train_list = []
+    val_list = []
+
     for epoch in range(0, num_epoch):
         train_loss = 0.
 
@@ -113,15 +121,19 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
             nan_mask = np.isnan(train_data[user_id].unsqueeze(0).numpy())
             target[0][nan_mask] = output[0][nan_mask]
 
-            loss = torch.sum((output - target) ** 2.)
+            loss = torch.sum((output - target) ** 2.) + model.get_weight_norm() * lamb * 0.5
             loss.backward()
 
             train_loss += loss.item()
             optimizer.step()
 
         valid_acc = evaluate(model, zero_train_data, valid_data)
-        print("Epoch: {} \tTraining Cost: {:.6f}\t "
-              "Valid Acc: {}".format(epoch, train_loss, valid_acc))
+        # print("Epoch: {} \tTraining Cost: {:.6f}\t "
+        #       "Valid Acc: {}".format(epoch, train_loss, valid_acc))
+
+        train_list.append(train_loss)
+        val_list.append(valid_acc)
+    return train_list, val_list
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -162,16 +174,53 @@ def main():
     # validation set.                                                   #
     #####################################################################
     # Set model hyperparameters.
-    k = None
-    model = None
+    k_list = [10,50,100,200,500]
+    num_student = train_matrix.shape[0]
+    num_question = train_matrix.shape[1]
 
     # Set optimization hyperparameters.
-    lr = None
-    num_epoch = None
-    lamb = None
+    lr_list = [0.01,0.1,0.15]
+    num_epoch_list = [10,25,50]
+    lamb_list = [0.001, 0.01, 0.1, 1]
+    # for k in k_list:
+    #     for lr in lr_list:
+    #         for epoch in num_epoch_list:
+    #             model = AutoEncoder(num_question, k)
+    #             train_list, val_list = train(model, lr, train_matrix, zero_train_matrix,
+    #                                          valid_data, epoch, lamb=0)
+    #             print(f"k is {k}, lr is {lr}, num_epoch is {epoch}, best accuracy rate is {max(val_list)} when epoch is {val_list.index(max(val_list))}")
+    # k is 10, lr is 0.01, num_epoch is 50, best accuracy rate is 0.6879762912785775 when epoch is 49
+    best_lr = 0.01
+    best_num_epoch = 50
+    best_k = 10
 
-    train(model, lr, lamb, train_matrix, zero_train_matrix,
-          valid_data, num_epoch)
+    #d
+    model = AutoEncoder(num_question, best_k)
+    # train_list1, val_list1 = train(model, best_lr, train_matrix, zero_train_matrix, valid_data, best_num_epoch, lamb=0)
+    # test_acc = evaluate(model, zero_train_matrix, test_data)
+    # plt.figure(1)
+    # plt.plot(list(range(best_num_epoch)), train_list1, label="training lost")
+    # plt.xlabel("epoch")
+    # plt.ylabel("training loss")
+    # plt.title("epoch vs training loss")
+    # plt.figure(2)
+    # plt.plot(list(range(best_num_epoch)), val_list1, label="training lost")
+    # plt.xlabel("epoch")
+    # plt.ylabel("validation accuracy")
+    # plt.title("epoch vs validation accuracy")
+    # plt.show()
+    # print(f"test accuracy is {test_acc}")
+
+    #e
+    for lamb in lamb_list:
+        train_list2, val_list2 = train(model, best_lr, train_matrix, zero_train_matrix, valid_data, best_num_epoch,
+                                       lamb=lamb)
+        test_acc = evaluate(model,热发电v从                                                              * zero_train_matrix, test_data)
+        print(f"for lamb = {lamb}, best accuracy rate for validation is {max(val_list2)}, test accuracy is {test_acc}")
+
+
+
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
