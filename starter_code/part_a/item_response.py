@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from utils import *
+from starter_code.utils import *
 
 import numpy as np
 
