@@ -31,7 +31,10 @@ def neg_log_likelihood(data, theta, beta):
         theta_i = theta[data["user_id"][i]]
         beta_j = beta[data["question_id"][i]]
         sig = sigmoid(theta_i - beta_j)
+        if sig == 0 or sig ==1:
+            raise ZeroDivisionError("Something went wrong and log-likelihood is dividing by zero, check if learning rate is too high")
         log_lklihood += (data['is_correct'][i] * np.log(sig) + (1-data['is_correct'][i]) * np.log(1-sig))
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################

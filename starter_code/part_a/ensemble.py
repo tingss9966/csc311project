@@ -1,5 +1,8 @@
 import math
 import random
+
+import numpy as np
+
 import item_response as ir
 import matplotlib.pyplot as plt
 from starter_code.utils import *
@@ -30,6 +33,15 @@ def predict(data, theta, beta):
     return pred
 
 
+def find_lr(data, val_data, lr, iterations):
+    results = np.zeros(shape=len(lr))
+    count=0
+    for i in lr:
+        theta, beta, _,_,_ = ir.irt(data, val_data, i, iterations)
+        results[count] = ir.evaluate(val_data, theta, beta)
+        count+=1
+    return lr[np.argmax(results)]
+
 if __name__ == "__main__":
     sparse_matrix = load_train_sparse("../data")
     train_data = load_train_csv("../data")
@@ -40,9 +52,15 @@ if __name__ == "__main__":
     data2 = chose_sample(train_data, k, 60)
     data3 = chose_sample(train_data, k, 90)
     samples = [data1, data2, data3]
-    # ------------------------ hyper parameters
-    lr = 0.01
+
+    # Finding the best learning rate
+    # You can comment out this part to save time and use the learning rate already found
+    # for item response
+    lrs = [0.05,0.03,0.01,0.005,0.001]
     iterations = 20
+    lr = find_lr(train_data,val_data,lrs, iterations)
+    # lr = 0.01
+    # iterations = 20
     result = []
     for i in samples:
         theta, beta, _, _, _ = ir.irt(i, val_data, lr, iterations)
