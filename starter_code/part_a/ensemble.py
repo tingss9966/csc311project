@@ -1,14 +1,16 @@
-import math
 import random
-
-import numpy as np
-
 import item_response as ir
-import matplotlib.pyplot as plt
 from starter_code.utils import *
 
 
-def chose_sample(data, k, seed):
+def chose_sample(data, k, seed=random.randint(0, 100)):
+    """
+    This function will chose the data that will be used for training, this is called bagging
+    :param data: The whole data set that we will be choosing from
+    :param k: This is the ratio of the data that we will be using from the original
+    :param seed: This is the random seed, in case we don't want similar data being generated
+    :return The data chosen after using bagging
+    """
     data = data.copy()
     sample = {
         "user_id": [],
@@ -24,6 +26,13 @@ def chose_sample(data, k, seed):
 
 
 def predict(data, theta, beta):
+    """
+    We will predict the data with the given theta and beta, this is using item response.
+    :param data: the data that we are trying to predict
+    :param theta: the theta that we use to predict
+    :param beta: the beta we use to predict
+    :return a list that shows which data that we have predicted correctly
+    """
     pred = []
     for i, q in enumerate(data["question_id"]):
         u = data["user_id"][i]
@@ -33,14 +42,45 @@ def predict(data, theta, beta):
     return pred
 
 
-def find_lr(data, val_data, lr, iterations):
-    results = np.zeros(shape=len(lr))
-    count=0
-    for i in lr:
-        theta, beta, _,_,_ = ir.irt(data, val_data, i, iterations)
-        results[count] = ir.evaluate(val_data, theta, beta)
-        count+=1
-    return lr[np.argmax(results)]
+def evaluate(data, learn_rate, iteration, validation_data):
+    """
+    This function will evaluate the give data, and print out the accuracy
+    :param data: The data that we are trying to evaluate
+    :param learn_rate: The learning rate that we will be using on the item response
+    :param iteration: The iterations we will be using
+    :param validation_data: The validation data that we will use to evaluate the data
+    :return: none
+    """
+    result = []
+    for i in data:
+        theta, beta, _, _, _ = ir.irt(i, validation_data, learn_rate, iteration)
+        result.append(predict(validation_data, theta, beta))
+    pred = []
+    for i in np.arange(len(result[0])):
+        temp = (result[0][i] + result[1][i] + result[2][i]) / 3
+        pred.append(temp >= 0.5)
+    acc = np.sum((validation_data["is_correct"] == np.array(pred))) \
+          / len(validation_data["is_correct"])
+    print(acc)
+
+
+def find_lr(data, validation_data, learn_rate, iteration):
+    """
+    :param data: The data we want to find the best learning rate
+    :param validation_data: The validation data that we use to implement item response
+    :param learn_rate: the list of learning rate that will be implemented in ir
+    :param iteration: the iterations we use for ir, this will stay the same for all ir, so that we stay constant to get
+    the best learning rate
+    :return the learning rate in the list of learning rates that generate the best outcome
+    """
+    results = np.zeros(shape=len(learn_rate))
+    count = 0
+    for i in learn_rate:
+        theta, beta, _, _, _ = ir.irt(data, validation_data, i, iteration)
+        results[count] = ir.evaluate(validation_data, theta, beta)
+        count += 1
+    return learn_rate[np.argmax(results)]
+
 
 if __name__ == "__main__":
     sparse_matrix = load_train_sparse("../data")
@@ -56,21 +96,9 @@ if __name__ == "__main__":
     # Finding the best learning rate
     # You can comment out this part to save time and use the learning rate already found
     # for item response
-    lrs = [0.05,0.03,0.01,0.005,0.001]
+    lrs = [0.05, 0.03, 0.01, 0.005, 0.001]
     iterations = 20
-    lr = find_lr(train_data,val_data,lrs, iterations)
+    lr = find_lr(train_data, val_data, lrs, iterations)
     # lr = 0.01
     # iterations = 20
-    result = []
-    for i in samples:
-        theta, beta, _, _, _ = ir.irt(i, val_data, lr, iterations)
-        result.append(predict(val_data, theta, beta))
-    pred = []
-    for i in np.arange(len(result[0])):
-        temp = (result[0][i] + result[1][i] + result[2][i]) / 3
-        pred.append(temp >= 0.5)
-    acc = np.sum((val_data["is_correct"] == np.array(pred))) \
-          / len(val_data["is_correct"])
-    print(acc)
-
-
+    evaluate(samples, lr, iterations, val_data)
