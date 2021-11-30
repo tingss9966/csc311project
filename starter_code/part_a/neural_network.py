@@ -215,7 +215,7 @@ def main():
     for lamb in lamb_list:
         train_list2, val_list2 = train(model, best_lr, train_matrix, zero_train_matrix, valid_data, best_num_epoch,
                                        lamb=lamb)
-        test_acc = evaluate(model,热发电v从                                                              * zero_train_matrix, test_data)
+        test_acc = evaluate(model, zero_train_matrix, test_data)
         print(f"for lamb = {lamb}, best accuracy rate for validation is {max(val_list2)}, test accuracy is {test_acc}")
 
 
