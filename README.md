@@ -6,7 +6,7 @@ when running the files please comment out these section if they have not been co
 (If nothing goes wrong, they should be commented out)
 If you want to run these part of our code, please keep in mind that most of them are very time-consuming.
 especially the comment out section in part B ensemble.
-#Part A
+# Part A
 Run each file by going to each file and run main.
 
 For the 3 question to either implement matrix factorization or neural network, we chose to implement neural network.
