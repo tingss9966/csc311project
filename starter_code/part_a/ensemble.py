@@ -42,7 +42,7 @@ def predict(data, theta, beta):
     return pred
 
 
-def evaluate(data, learn_rate, iteration, validation_data):
+def evaluate(data, learn_rate, iteration, validation_data,test_data):
     """
     This function will evaluate the give data, and print out the accuracy
     :param data: The data that we are trying to evaluate
@@ -51,17 +51,25 @@ def evaluate(data, learn_rate, iteration, validation_data):
     :param validation_data: The validation data that we will use to evaluate the data
     :return: none
     """
-    result = []
+    val_result = []
+    test_result = []
     for i in data:
         theta, beta, _, _, _ = ir.irt(i, validation_data, learn_rate, iteration)
-        result.append(predict(validation_data, theta, beta))
+        val_result.append(predict(validation_data, theta, beta))
+        test_result.append(predict(test_data, theta, beta))
     pred = []
-    for i in np.arange(len(result[0])):
-        temp = (result[0][i] + result[1][i] + result[2][i]) / 3
-        pred.append(temp >= 0.5)
+    test_pred = []
+    for i in np.arange(len(val_result[0])):
+        temp1 = (val_result[0][i] + val_result[1][i] + val_result[2][i]) / 3
+        pred.append(temp1 >= 0.5)
     acc = np.sum((validation_data["is_correct"] == np.array(pred))) \
           / len(validation_data["is_correct"])
-    print(acc)
+    for i in np.arange(len(test_result[0])):
+        temp2 = (test_result[0][i] + test_result[1][i] + test_result[2][i]) / 3
+        test_pred.append(temp2 >= 0.5)
+    test_acc = np.sum((test_data["is_correct"] == np.array(test_pred))) \
+               / len(test_data["is_correct"])
+    return acc, test_acc
 
 
 def find_lr(data, validation_data, learn_rate, iteration):
@@ -96,9 +104,11 @@ if __name__ == "__main__":
     # Finding the best learning rate
     # You can comment out this part to save time and use the learning rate already found
     # for item response
-    lrs = [0.05, 0.03, 0.01, 0.005, 0.001]
-    iterations = 20
-    lr = find_lr(train_data, val_data, lrs, iterations)
-    # lr = 0.01
+    # lrs = [0.05, 0.03, 0.01, 0.005, 0.001]
     # iterations = 20
-    evaluate(samples, lr, iterations, val_data)
+    # lr = find_lr(train_data, val_data, lrs, iterations)
+    lr = 0.01
+    iterations = 20
+    validation_accuracy,test_accuracy = evaluate(samples, lr, iterations, val_data, test_data)
+    print(f"Validation accuracy is {validation_accuracy}")
+    print(f"Test accuracy is {test_accuracy}")
