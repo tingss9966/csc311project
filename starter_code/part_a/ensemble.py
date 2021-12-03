@@ -1,7 +1,7 @@
 import random
 import item_response as ir
 from starter_code.utils import *
-
+import matplotlib.pyplot as plt
 
 def chose_sample(data, k, seed=random.randint(0, 100)):
     """
@@ -42,6 +42,22 @@ def predict(data, theta, beta):
     return pred
 
 
+def get_acc(val_result, validation_data):
+    """
+        Get the accuracy of the result given
+        :param val_result: a 2D array that contains the lists of lists of results
+        :param validation_data: the data to check on
+        :return the accuracy
+        """
+    pred = []
+    for i in np.arange(len(val_result[0])):
+        temp1 = (val_result[0][i] + val_result[1][i] + val_result[2][i]) / 3
+        pred.append(temp1 >= 0.5)
+    acc = np.sum((validation_data["is_correct"] == np.array(pred))) \
+          / len(validation_data["is_correct"])
+    return acc
+
+
 def evaluate(data, learn_rate, iteration, validation_data,test_data):
     """
     This function will evaluate the give data, and print out the accuracy
@@ -49,6 +65,7 @@ def evaluate(data, learn_rate, iteration, validation_data,test_data):
     :param learn_rate: The learning rate that we will be using on the item response
     :param iteration: The iterations we will be using
     :param validation_data: The validation data that we will use to evaluate the data
+    :param test_data: the test data that we will use to evaluate the data
     :return: none
     """
     val_result = []
@@ -57,22 +74,12 @@ def evaluate(data, learn_rate, iteration, validation_data,test_data):
         theta, beta, _, _, _ = ir.irt(i, validation_data, learn_rate, iteration)
         val_result.append(predict(validation_data, theta, beta))
         test_result.append(predict(test_data, theta, beta))
-    pred = []
-    test_pred = []
-    for i in np.arange(len(val_result[0])):
-        temp1 = (val_result[0][i] + val_result[1][i] + val_result[2][i]) / 3
-        pred.append(temp1 >= 0.5)
-    acc = np.sum((validation_data["is_correct"] == np.array(pred))) \
-          / len(validation_data["is_correct"])
-    for i in np.arange(len(test_result[0])):
-        temp2 = (test_result[0][i] + test_result[1][i] + test_result[2][i]) / 3
-        test_pred.append(temp2 >= 0.5)
-    test_acc = np.sum((test_data["is_correct"] == np.array(test_pred))) \
-               / len(test_data["is_correct"])
-    return acc, test_acc
+    val_acc = get_acc(val_result, validation_data)
+    test_acc = get_acc(test_result, test_data)
+    return val_acc, test_acc
 
 
-def find_lr(data, validation_data, learn_rate, iteration):
+def find_lr(data, validation_data, learn_rate, iteration, test_data):
     """
     :param data: The data we want to find the best learning rate
     :param validation_data: The validation data that we use to implement item response
@@ -81,34 +88,43 @@ def find_lr(data, validation_data, learn_rate, iteration):
     the best learning rate
     :return the learning rate in the list of learning rates that generate the best outcome
     """
-    results = np.zeros(shape=len(learn_rate))
-    count = 0
+    results = []
     for i in learn_rate:
-        theta, beta, _, _, _ = ir.irt(data, validation_data, i, iteration)
-        results[count] = ir.evaluate(validation_data, theta, beta)
-        count += 1
-    return learn_rate[np.argmax(results)]
+        val,test = evaluate(data,i,iteration,validation_data,test_data)
+        results.append(val)
+    return results
 
 
 if __name__ == "__main__":
     sparse_matrix = load_train_sparse("../data")
     train_data = load_train_csv("../data")
     val_data = load_valid_csv("../data")
-    test_data = load_public_test_csv("../data")
+    tests_data = load_public_test_csv("../data")
     k = len(train_data["user_id"])
     data1 = chose_sample(train_data, k, 30)
     data2 = chose_sample(train_data, k, 60)
     data3 = chose_sample(train_data, k, 90)
     samples = [data1, data2, data3]
 
-    # Finding the best learning rate
-    # You can comment out this part to save time and use the learning rate already found
-    # for item response
-    # lrs = [0.05, 0.03, 0.01, 0.005, 0.001]
+    # To check how ensemble improves accuracy on IRT
+
+    # lrs = [0.08, 0.05, 0.03, 0.01, 0.005, 0.001]
     # iterations = 20
-    # lr = find_lr(train_data, val_data, lrs, iterations)
+    # result= find_lr(samples, val_data, lrs, iterations, tests_data)
+    # plt.plot(lrs,result,label = "ensemble")
+    #
+    # result = []
+    # for i in lrs:
+    #     temp = ir.irt(train_data, val_data, i, iterations)
+    #     acc = ir.evaluate(val_data, temp[0], temp[1])
+    #     result.append(acc)
+    # plt.plot(lrs, result,label = "irt")
+    # plt.legend()
+    # plt.show()
+    # plt.show()
+
     lr = 0.01
     iterations = 20
-    validation_accuracy,test_accuracy = evaluate(samples, lr, iterations, val_data, test_data)
+    validation_accuracy,test_accuracy = evaluate(samples, lr, iterations, val_data, tests_data)
     print(f"Validation accuracy is {validation_accuracy}")
     print(f"Test accuracy is {test_accuracy}")
