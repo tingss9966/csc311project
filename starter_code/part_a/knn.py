@@ -1,6 +1,7 @@
+from matplotlib import pyplot as plt
 from sklearn.impute import KNNImputer
 from starter_code.utils import *
-import matplotlib.pyplot as plt
+
 
 def knn_impute_by_user(matrix, valid_data, k):
     """ Fill in the missing values using k-Nearest Neighbors based on
@@ -38,10 +39,10 @@ def knn_impute_by_item(matrix, valid_data, k):
     # Implement the function as described in the docstring.             #
     #####################################################################
     nbrs = KNNImputer(n_neighbors=k)
-    # We use NaN-Euclidean distance measure.
-    mat = nbrs.fit_transform(matrix.T)
-    acc = sparse_matrix_evaluate(valid_data, mat.T)
-    print("Validation Accuracy on question: {}".format(acc))
+    tran = nbrs.fit_transform(matrix.transpose())
+    mat = tran.transpose()
+    acc = sparse_matrix_evaluate(valid_data, mat)
+    print("Validation Accuracy: {}".format(acc))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -64,26 +65,38 @@ def main():
     # the best performance and report the test accuracy with the        #
     # chosen k*.                                                        #
     #####################################################################
-    num = [1,6,11,16,21,26]
-    result= []
-    for i in num:
-        result.append(knn_impute_by_user(sparse_matrix, val_data, i))
-    plt.plot(num,result)
-    plt.show()
-    index = np.argmax(result)
-    print("k: "+str(num[index])+" Test Accuracy: "+str(knn_impute_by_user(sparse_matrix, test_data, num[index])))
-
-    result2 = []
-    for i in num:
-        result2.append(knn_impute_by_item(sparse_matrix, val_data, i))
-    plt.plot(num, result2)
-    plt.show()
-    index = np.argmax(result2)
-    print("k: " + str(num[index]) + " Test Accuracy: " + str(knn_impute_by_item(sparse_matrix, test_data, num[index])))
+    acc_user = []
+    acc_item = []
+    k_list = [1, 6, 11, 16, 21, 26]
+    for k in range(len(k_list)):
+        acc_user.append(knn_impute_by_user(sparse_matrix, val_data, k_list[k]))
+        acc_item.append(knn_impute_by_item(sparse_matrix, val_data, k_list[k]))
+        print(f"user accuracy rate for k = {k_list[k]} is {acc_user[k]}")
+        print(f"item accuracy rate for k = {k_list[k]} is {acc_item[k]}")
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
-
+    user_max = 0
+    item_max = 0
+    user_max_i = 0
+    item_max_i = 0
+    for i in range(len(k_list)):
+        if acc_user[i] > user_max:
+            user_max = acc_user[i]
+            user_max_i = i
+        if acc_item[i] > item_max:
+            item_max = acc_item[i]
+            item_max_i = i
+    acc_user_test = knn_impute_by_user(sparse_matrix, test_data, k_list[user_max_i])
+    acc_item_test = knn_impute_by_item(sparse_matrix, test_data, k_list[item_max_i])
+    print(f" best user accuracy rate is {user_max} when k = {k_list[user_max_i]} on validation set, using the same k \n"
+          f"on test set we will get accuracy of {acc_user_test}")
+    print(f" best item accuracy rate is {item_max} when k = {k_list[item_max_i]} on validation set, using the same k \n"
+          f"on test set we will get accuracy of {acc_item_test}")
+    plt.plot(k_list, acc_user, label="user accuracy with k")
+    plt.plot(k_list, acc_item, label="item accuracy with k")
+    plt.legend()
+    plt.show()
 
 if __name__ == "__main__":
     main()
