@@ -95,6 +95,8 @@ def main():
           f"on test set we will get accuracy of {acc_item_test}")
     plt.plot(k_list, acc_user, label="user accuracy with k")
     plt.plot(k_list, acc_item, label="item accuracy with k")
+    plt.xlabel("k")
+    plt.ylabel("accuracy")
     plt.legend()
     plt.show()
 

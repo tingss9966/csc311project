@@ -94,13 +94,14 @@ def evaluate(the_model, sample, lr, valid_data, tests_data, epoch, lamb):
     return acc, test_acc
 
 
-def find_lr(the_model, data, validation_data, learn_rate, num_epoch, lamb,tests_data):
+def find_lr(data, validation_data, learn_rate, num_epoch, lamb,tests_data):
     """
     To find the best learning rate
     """
+    model = nn.AutoEncoder(num_question, k1, k2)
     results = []
     for i in learn_rate:
-        val, test = evaluate(the_model,data,i,validation_data,tests_data,num_epoch,lamb)
+        val, test = evaluate(model,data,i,validation_data,tests_data,num_epoch,lamb)
         results.append(val)
     return results
 
@@ -122,10 +123,6 @@ if __name__ == "__main__":
     train_data = load_train_csv("../data")
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
-
-
-
-
     k = len(train_data["user_id"])
     data1 = chose_sample(train_data, sparse_matrix, k, 30)
     data2 = chose_sample(train_data, sparse_matrix, k, 60)
@@ -137,13 +134,15 @@ if __name__ == "__main__":
     k1 = 100
     k2 = 10
     best_lamb = 0.001
-    model = nn.AutoEncoder(num_question, k1, k2)
+
 
     # lr = [0.1,0.05,0.03,0.01,0.005,0.003,0.001]
-    # result = find_lr(model,samples,val_data,lr,best_num_epoch,best_lamb,test_data)
+    # result = find_lr(samples,val_data,lr,best_num_epoch,best_lamb,test_data)
     # plt.plot(lr, result, label="ensemble")
+    #
     # results = []
     # for i in lr:
+    #     model = nn.AutoEncoder(num_question, k1, k2)
     #     zero_train_matrix = sparse_matrix.copy()
     #     zero_train_matrix[np.isnan(sparse_matrix)] = 0
     #     zero_train_matrix = torch.FloatTensor(zero_train_matrix)
@@ -158,8 +157,7 @@ if __name__ == "__main__":
     # plt.title("Ensemble VS non-Ensemble")
     # plt.legend()
     # plt.show()
-    # plt.show()
-
+    model = nn.AutoEncoder(num_question, k1, k2)
     accuracy, test_accuracy = evaluate(model, samples, best_lr, val_data, test_data, best_num_epoch, best_lamb)
     print(f"Validation accuracy is {accuracy}")
     print(f"Test accuracy is {test_accuracy}")
